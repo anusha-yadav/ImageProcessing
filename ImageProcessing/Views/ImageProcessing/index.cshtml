@@ -1,0 +1,92 @@
+﻿@{
+    ViewBag.Title = "Image Processing";
+}
+
+<h2>Image Processing</h2>
+
+<form asp-controller="ImageProcessing" asp-action="ProcessImages" method="post" enctype="multipart/form-data">
+    <input type="file" name="imageFiles" accept="image/*" multiple required />
+    <button type="submit" onclick="processImages()">Process Image</button>
+</form>
+<div id="processingFeedback"></div>
+<div id="resultImage"></div>
+<button id="downloadButton" onclick="downloadProcessedImages()">Download Processed Images</button>
+
+<script>
+async function processImages() 
+{
+    debugger
+    const form = document.querySelector("form");
+    const feedbackDiv = document.getElementById("processingFeedback");
+    const resultImageDiv = document.getElementById("resultImage");
+    const downloadButton = document.getElementById("downloadButton");
+
+    feedbackDiv.innerText = "Processing...";
+
+    try {
+        const formData = new FormData(form);
+        const response = await fetch("/ImageProcessing/ProcessImages", {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorMessage = await response.text(); // Read the error message
+            throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorMessage}`);
+        }
+
+        const result = await response.json();
+        console.log(result)
+        feedbackDiv.innerText = "Processing complete";
+
+        // Display each processed image
+        result.forEach((processedImagePath, index) => {
+            const imgElement = document.createElement("img");
+            imgElement.src = `/images/${processedImagePath}`;
+            imgElement.alt = `Processed Image ${index + 1}`;
+            resultImageDiv.appendChild(imgElement);
+        });
+
+        debugger
+        // Show the download button
+        downloadButton.style.display = "block";
+        // Store processed image names for download
+        console.log(result)
+        downloadButton.dataset.imageNames = JSON.stringify(result);
+    } 
+    catch (error) {
+        feedbackDiv.innerText = `Error: ${error.message}`;
+    }
+}
+
+    // function downloadProcessedImages() {
+    //     debugger
+    //     const downloadButton = document.getElementById("downloadButton");
+    //     const imageNames = downloadButton.imageNames;
+
+    //     if (imageNames && imageNames.length > 0) {
+    //         const downloadLink = document.createElement("a");
+    //         downloadLink.href = `/ImageProcessing/DownloadProcessedImages?imageNames=${JSON.stringify(imageNames)}`;
+    //         downloadLink.setAttribute("download", "");
+    //         downloadLink.click();
+    //     }
+    // }
+
+function downloadProcessedImages() {
+    debugger
+    console.log("Download button clicked");
+    const downloadButton = document.getElementById("downloadButton");
+    const imageNamesString = downloadButton.dataset.imageNames;
+    const imageNames = JSON.parse(imageNamesString);
+    console.log("Image names:", imageNames);
+
+    if (imageNames && imageNames.length > 0) {
+        const downloadLink = document.createElement("a");
+        const imageNamesString = imageNames.join(",");
+        downloadLink.href = `/ImageProcessing/DownloadProcessedImages?imageNames=${imageNamesString}`;
+        downloadLink.setAttribute("download", "");
+        downloadLink.click();
+    }
+}
+
+</script>
